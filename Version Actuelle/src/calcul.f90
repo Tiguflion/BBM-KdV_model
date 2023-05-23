@@ -40,13 +40,12 @@ SUBROUTINE Calcul_Transport()
 INTEGER :: i
 REAL(rp) :: SolL,SolR
 
-CALL flux_Lax_Friedrichs(W(:,:),Flux(:,:))
-
+CALL flux_upwind(W(1,:),c1,Flux(1,:))
+CALL flux_upwind(W(2,:),c2,Flux(2,:))
 	DO i = 2,Nx-1
-		!WRITE(*,*) dt/dx*(Flux(:,i) - Flux(:,i-1))
 		W(:,i) = W(:,i) - dt/dx*(Flux(:,i) - Flux(:,i-1))
 	END DO 
-!READ(*,*)
+	
 END SUBROUTINE Calcul_transport 
 
 

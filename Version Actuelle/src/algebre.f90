@@ -68,7 +68,7 @@ CONTAINS
 	
 	Cholesky = L	
 	RETURN 
-END FUNCTION Cholesky	
+	END FUNCTION Cholesky	
 	
 	
 		
@@ -173,6 +173,12 @@ END FUNCTION Cholesky
 
 
 
+!==============================================================================================================
+!
+!					STOCKAGE MORSE
+!
+!==============================================================================================================
+
 
 		!-- Fonction qui résouds le problème matriciel AU = L , à l'aide de la matrice A_creux, en utilisant la méthode de Gauss-Seidel : 
 ! ! @ Variable d'entrées 
@@ -187,7 +193,7 @@ END FUNCTION Cholesky
 !				U : Solution du problème matriciel AU = L
 
 
-      SUBROUTINE gauss_seidel_creux (N_Coeff,Ns, A_Creux,Vois,Coeff_Diag,U,B)
+      SUBROUTINE gauss_seidel_creux_Morse (N_Coeff,Ns, A_Creux,Vois,Coeff_Diag,U,B)
       INTEGER, INTENT(IN)  ::  Ns, N_Coeff
       INTEGER :: i
       INTEGER :: j
@@ -202,8 +208,8 @@ END FUNCTION Cholesky
 		REAL(rp) :: R
 		k = 0
 		ERR = 1._rp
-		!U(:) = 0._rp
-		do while (ERR > 10E-6 .and. k < 20000)
+		U(:) = 0._rp
+		do while (ERR > 10E-10 .and. k < 20000)
 			k = k+1
 			ERR = 0._rp
 			do i = 1,Ns
@@ -213,26 +219,162 @@ END FUNCTION Cholesky
 				end do 			
 			
 				! Code original 
-				!S = 0
-				
+				!S = 0._rp
+				!
 				!do j = 1, (Coeff_diag(i+1) - Coeff_diag(i))
 				!	S = S+A_Creux(j-1+Coeff_diag(i))*U(Vois(j-1 + Coeff_diag(i)))
 				!end do 
-				
+				!
 				!R = (B(i) - S)/A_Creux(Coeff_diag(i))
+				
 				ERR = ERR + R*R
 				U(i) = U(i) + R
 				ERR = sqrt(ERR)
-				
 			end do
+			if(k == 20000) then 
+				write(*,*) ERR,k
+			end if 
 		end do
 
 !
       RETURN
-      END SUBROUTINE gauss_seidel_creux
+      END SUBROUTINE gauss_seidel_creux_Morse
 !
 
 
 
 
+
+
+
+!==============================================================================================================
+!
+!					STOCKAGE PENTA-DIAGONAL
+!
+!==============================================================================================================
+
+
+
+
+SUBROUTINE res_Chol_Penta(n, A, X, B)
+      
+      IMPLICIT NONE 
+      
+      INTEGER, INTENT(IN)  ::  n
+      INTEGER :: i
+      INTEGER :: j
+      REAL(rp), DIMENSION(5,n),  INTENT(IN)     ::  A
+      REAL(rp), DIMENSION(n),    INTENT(INOUT)  ::  X
+      REAL(rp), DIMENSION(n),    INTENT(IN)     ::  B
+ 
+	REAL(rp), DIMENSION(5,n) :: LtL 
+	REAL(rp), DIMENSION(n) :: Ly
+ 	
+ 	Ly = 0._rp
+      	LtL = Cholesky_penta(n,A)
+
+      CALL sys_trig_inf_penta(n,LtL,Ly,B)
+      
+      CALL sys_trig_sup_penta(n,LtL,X,Ly)
+
+!
+      RETURN
+      END SUBROUTINE res_Chol_Penta
+
+
+
+
+	FUNCTION Cholesky_Penta(n,A)
+
+	IMPLICIT NONE 
+
+	INTEGER :: n
+	REAL(rp), DIMENSION(5,n) :: A
+	
+	REAL(rp), DIMENSION(5,n) :: Cholesky_Penta
+	REAL(rp), DIMENSION(5,n) :: L
+	REAL(rp) :: temp
+	INTEGER :: i, j, k
+	Cholesky_Penta = 0._rp
+	L = 0._rp
+	
+	! Dans la prise de note papier
+	! A(3, i) = c_i (coeff diag)
+	! A(2, i) = d_i (coeff diag + 1)
+	! A(1, i) = e_i (coeff diag + 2)
+	!
+	L(3,1) = sqrt(A(3,1))
+	L(2,1) = A(2,1)/sqrt(A(3,1))
+	L(1,1) = A(1,1)/sqrt(A(3,1))
+	
+	L(3,2) = sqrt(A(3,2)- L(2,1)**2)
+	L(2,2) = (A(2,2) - L(1,1)*L(2,1))/L(3,2)
+	L(1,2) = (A(1,2)/L(3,2))
+	L(3,3) = sqrt(A(3,3) - L(1,3)**2 - L(2,2)**2)
+	
+	
+	DO i = 3,n 
+		L(3,i) = sqrt(A(3,i) - L(1,i-2)**2 - L(2,i-1)**2)
+		IF(i < n-1) THEN 
+			L(1,i) = A(1,i)/L(3,i) 
+			L(2,i) = (A(2,i) - L(2,i-1)*L(1,i-1))/L(3,i)
+		ELSE
+			L(1,n-1) = 0._rp
+			L(1,n) = 0._rp
+			L(2,n) = 0._rp
+		END IF 
+	END DO  
+
+
+	
+	Cholesky_Penta = L	
+	
+	
+	RETURN 
+	END FUNCTION Cholesky_Penta		
+	
+	SUBROUTINE sys_trig_inf_penta(n,A,X,B) 
+	
+	IMPLICIT NONE 
+
+	INTEGER, INTENT(IN)  ::  n
+	INTEGER :: i
+	INTEGER :: j
+	REAL :: S
+	REAL(rp), DIMENSION(5,n)    ::  A
+	REAL(rp), DIMENSION(n)      ::  X
+	REAL(rp), DIMENSION(n)      ::  B	
+	
+	X(1) = B(1)/A(3,1)
+	X(2) = (B(2) - A(2,1)*X(1))/A(3,2)
+	
+
+
+	DO i = 3,n
+		X(i) = (B(i) - A(1,i-2)*X(i-2) - A(2,i-1)*X(i-1))/A(3,i)
+	END DO 	
+	
+	END SUBROUTINE sys_trig_inf_penta
+
+
+
+	SUBROUTINE sys_trig_sup_penta(n,A,X,B)
+	
+	IMPLICIT NONE 
+
+	INTEGER, INTENT(IN)  ::  n
+	INTEGER :: i
+	REAL(rp), DIMENSION(5,n),  INTENT(IN)     ::  A
+	REAL(rp), DIMENSION(n),  INTENT(INOUT)  :: X
+	REAL(rp), DIMENSION(n),    INTENT(IN)     ::  B	
+	
+	X(n) = B(n)/A(3,n)
+	X(n-1) = (B(n-1) - A(2,n)*X(n))/A(3,n-1)
+	
+	DO i = n-2,1,-1
+		X(i) = (B(i) - A(1,i+2)*X(i+2) - A(2,i+1)*X(i+1))/A(3,i)
+	END DO 
+
+
+	END SUBROUTINE sys_trig_sup_penta
 END MODULE mod_algebre 

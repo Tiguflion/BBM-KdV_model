@@ -36,6 +36,29 @@ SUBROUTINE flux_Lax_Friedrichs(W,Flux)
 	END DO 
 
 END SUBROUTINE flux_Lax_Friedrichs
+
+
+SUBROUTINE flux_upwind(W,a,Flux)
+	REAL(rp), 		INTENT(IN) :: a
+	REAL(rp), DIMENSION(:), INTENT(IN) :: W
+	REAL(rp), DIMENSION(:), INTENT(INOUT) :: Flux
+	
+	INTEGER :: i
+	
+	
+	REAL(rp) :: am, ap
+	
+	am = min(a,0._rp)
+	ap = max(a,0._rp)
+	
+	Flux(1:Nx) = 0._rp
+	
+	DO i = 1,Nx-1
+		Flux(i) = am*W(i+1) + ap*W(i)
+	END DO 
+	
+END SUBROUTINE flux_upwind
+
 !=========================================================================
 !	FONCTION QUI CALCULE LE SECOND MEMBRE DE L'EQUATION DE SHALLOW WATER
 !	POUR UN SCHEMAS DE GODUNOV WELL BALANCED SANS FRICTION

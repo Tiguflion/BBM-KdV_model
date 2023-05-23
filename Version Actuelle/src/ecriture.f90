@@ -2,6 +2,7 @@ MODULE mod_dat
 
 USE numerics
 USE mod_cond
+USE mod_gnuplot
 
 IMPLICIT NONE 
 
@@ -9,11 +10,10 @@ IMPLICIT NONE
 CONTAINS 
 
 
-SUBROUTINE init_var(niter,date,dt,dx)
+SUBROUTINE init_var(niter,date,dx)
 
 INTEGER, INTENT(INOUT) :: niter
 REAL(rp), INTENT(INOUT) :: date
-REAL(rp), INTENT(INOUT) :: dt 
 REAL(rp), INTENT(INOUT) :: dx
  
 OPEN(UNIT = 50, FILE = 'donnee', STATUS = 'OLD', ACTION = 'READ')
@@ -27,6 +27,7 @@ READ(50,*) Cas_topo
 READ(50,*) H
 READ(50,*) A
 READ(50,*) x0
+READ(50,*) dispersion
 READ(50,*) alpha 
 
 
@@ -34,8 +35,10 @@ CLOSE(50)
 
 niter = 0
 date = 0.0_rp
-dt = 0.0_rp
 dx = (xmax-xmin)/(Nx-1)
+
+CALL init_tab()
+CALL Cond_init(W(:,:),X(:),H)
 
 END SUBROUTINE init_var 
 
@@ -63,6 +66,23 @@ END DO
 END SUBROUTINE init_tab
 
 
+SUBROUTINE ecrit_frame(t_sortie,dt_sortie,date)
+	REAL(rp), INTENT(IN) :: dt_sortie
+	REAL(rp), INTENT(IN) :: date
+	REAL(rp), INTENT(INOUT) :: t_sortie
+
+	if(t_sortie <= date) then 
+		niter = niter+1
+		CALL init_frame_data_names()
+		CALL h_theo(x,date,h_temp)
+		CALL Ecrits_data()
+		CALL script_sauv_png("Hauteur d'eau à T = ")
+	
+		t_sortie = t_sortie + dt_sortie
+	end if 	
+
+END SUBROUTINE ecrit_frame
+
 
 
 SUBROUTINE sol_dat()
@@ -74,7 +94,8 @@ REAL(rp), DIMENSION(Nx) :: sig_ex
 REAL(rp) :: errmax, errL2
       write(6,*) 'fin de l''algorithme en',niter,' iterations'
       write(6,*) 'date de fin',date, Tfin
-
+      
+      CALL h_theo(x,0._rp,h_temp)
       CALL u_theo(X,Tfin,U)
       
       OPEN(unit=666, file = 'out/Solitaire/erreur',status = 'UNKNOWN')

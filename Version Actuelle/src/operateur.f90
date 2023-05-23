@@ -64,17 +64,18 @@ FUNCTION Da(a,dx,Ne)   ! ATTENTION : CETTE FONCTION NE PRENDS PAS EN COMPTE LES 
 	REAL(rp):: dx
 	REAL(rp), DIMENSION(Ne) :: a
 	
-	
 	REAL(rp), DIMENSION(Ne) :: Da
 	
 	INTEGER :: i
-	
 	Da = 0._rp
 
 !Gradiant centré
-	
-	Da(2:Ne-1) = (a(3:Ne) - a(1:Ne-2))/(2._rp*dx)
+	DO i = 2,Ne-1
+		Da(i) = (a(i+1) - a(i-1))/(2._rp*dx)
+	END DO 
 
+	Da(1) = 0._rp
+	Da(Ne) = 0._rp
 END FUNCTION Da
 
 
@@ -265,7 +266,24 @@ END SUBROUTINE Vois_aD2X
 !==============================================================================================================
 
 
-SUBROUTINE Id_Creux(Ne,Vec, Pos_diag, A_creux)
+
+
+
+
+
+
+
+
+!==============================================================================================================
+!
+!					STOCKAGE MORSE
+!
+!==============================================================================================================
+
+
+
+
+SUBROUTINE Id_Creux_Morse(Ne,Vec, Pos_diag, A_creux)
 	INTEGER, INTENT(IN) :: Ne
 	INTEGER(rp), DIMENSION(:) ,    INTENT(IN) :: Pos_diag
 	REAL(rp),    DIMENSION(Ne),    INTENT(IN) :: Vec
@@ -278,10 +296,10 @@ SUBROUTINE Id_Creux(Ne,Vec, Pos_diag, A_creux)
 		! Pas de nécéssitée d'ajouter les voisins ici, car on a dit qu'un point agit forcément sur lui même, lors de l'initialisation du vecteur voisin 
 	END DO 
 	
-END SUBROUTINE 
+END SUBROUTINE Id_Creux_Morse
 
 
-SUBROUTINE Diag_creux(Vec,Ne, k, Pos_diag, Vois, A_creux)
+SUBROUTINE Diag_creux_Morse(Vec,Ne, k, Pos_diag, Vois, A_creux)
 	INTEGER, INTENT(IN) :: Ne
 	INTEGER, INTENT(IN) :: k
 	INTEGER,  DIMENSION(:), INTENT(IN)    :: Pos_diag
@@ -302,14 +320,14 @@ SUBROUTINE Diag_creux(Vec,Ne, k, Pos_diag, Vois, A_creux)
 	END DO 
 
 
-END SUBROUTINE Diag_Creux
+END SUBROUTINE Diag_Creux_Morse
 
 
 
 
 
 
-SUBROUTINE DaDX_Creux(i,Ne,Vec,pos_diag,vois,A_creux)
+SUBROUTINE DaDX_Creux_Morse(i,Ne,Vec,pos_diag,vois,A_creux)
 
 	INTEGER, DIMENSION(:),  INTENT(IN) :: pos_diag 
 	INTEGER,	        INTENT(IN) :: i
@@ -366,12 +384,12 @@ SUBROUTINE DaDX_Creux(i,Ne,Vec,pos_diag,vois,A_creux)
 	END DO 
  
 
-END SUBROUTINE DaDX_Creux
+END SUBROUTINE DaDX_Creux_Morse
 
 
 
 
-SUBROUTINE aD2X_creux(i,Ne,vec,pos_diag,vois,A_creux)
+SUBROUTINE aD2X_creux_Morse(i,Ne,vec,pos_diag,vois,A_creux)
 
 	INTEGER, DIMENSION(:),  INTENT(IN) :: pos_diag 
 	INTEGER,	        INTENT(IN) :: i
@@ -393,9 +411,9 @@ SUBROUTINE aD2X_creux(i,Ne,vec,pos_diag,vois,A_creux)
 	Pos(2) = i-2
 	Pos(3) = i+2
 	
-	Coeff(1) = -(2._rp*vec)/(4._rp*(dx**2))
-	Coeff(2) = vec/(4._rp*dx**2)
-	Coeff(3) = vec/(4._rp*dx**2)
+	Coeff(1) = -(vec)/(2._rp*(dx**2))
+	Coeff(2) = vec/(4._rp*(dx**2))
+	Coeff(3) = vec/(4._rp*(dx**2))
 
 
 	!----- Shémas type de remplissage creux
@@ -423,9 +441,52 @@ SUBROUTINE aD2X_creux(i,Ne,vec,pos_diag,vois,A_creux)
 	END DO 
  
 
-END SUBROUTINE aD2X_creux
+END SUBROUTINE aD2X_creux_Morse
 
 
+
+
+
+!==============================================================================================================
+!
+!					STOCKAGE PENTA-DIAGONAL
+!
+!==============================================================================================================
+
+
+FUNCTION Diag_Penta(vec,Ne,k) 
+
+	IMPLICIT NONE 
+	INTEGER :: Ne 
+	REAL(rp), DIMENSION(:) :: vec
+	INTEGER :: k
+	REAL(rp), DIMENSION(5,Ne) :: Diag_Penta
+	INTEGER :: i
+	
+	Diag_Penta(:,:) = 0._rp
+	
+IF(k <= 0) THEN 
+	Diag_penta(3+k,1:Ne+k) = vec(1:Ne+k)
+ELSE
+	Diag_penta(3+k,1+k:Ne) = vec(1+k:Ne)
+END IF  	
+
+END FUNCTION Diag_penta
+
+
+FUNCTION aD2X_Penta(vec, dx, Ne)
+	INTEGER :: Ne
+	REAL(rp) :: dx
+	REAL(rp), DIMENSION(Ne) :: Vec
+	
+	REAL(rp), DIMENSION(5,Ne) :: aD2X_Penta
+	
+	aD2X_Penta(:,:) = 0._rp
+	
+	aD2X_Penta(:,:) = -Diag_Penta( 2*vec(1:Ne)/(4._rp*dx**2) ,Ne,0) &
+	&+ Diag_Penta( vec(1:Ne)/(4._rp*dx**2),Ne,-2) + Diag_Penta( vec(1:Ne)/(4._rp*dx**2)  , Ne,2)
+	
+END FUNCTION aD2X_Penta
 
 
 

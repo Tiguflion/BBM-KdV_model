@@ -2,6 +2,8 @@ MODULE numerics
 
 IMPLICIT NONE
 
+
+
 INTEGER, PARAMETER :: rp = 8
 INTEGER :: Nx
 
@@ -40,6 +42,7 @@ REAL(rp) :: c2
 CHARACTER(12) :: data_name
 CHARACTER(13) :: frame_name
 
+LOGICAL :: dispersion
 REAL(rp) :: alpha !-- Terme de liuen entre les deux coefficients de KdV
 
 

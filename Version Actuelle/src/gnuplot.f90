@@ -6,6 +6,19 @@ IMPLICIT NONE
 
 CONTAINS 
 
+
+
+SUBROUTINE init_animate(dt_sortie)
+	REAL(rp) :: dt_sortie
+	
+	CALL system ("rm -f out.mp4")
+	CALL suppr_fichier_data_frame()
+	CALL Init_fichier_data_frame()
+	CALL init_frame_data_names()
+	dt_sortie = Tfin/100._rp
+	
+END SUBROUTINE init_animate
+
 SUBROUTINE init_fichier_data_frame()
 	CALL system("mkdir data" )
 	CALL system("mkdir frame")
@@ -30,7 +43,7 @@ SUBROUTINE script_sauv_png(title)
 	CLOSE(111)
 	
 	CALL system("gnuplot hauteur_eau.gnu")
-	!CALL system("rm -rf hauteur_eau.gnu")
+
 END SUBROUTINE script_sauv_png
 
 SUBROUTINE Ecrits_data()
@@ -57,14 +70,10 @@ END SUBROUTINE init_frame_data_names
 
 
 SUBROUTINE Animation()
-	!CALL system("ffmpeg -i frame/plot%.png animation.avi")
 	CALL system("ffmpeg -r 20 -i frame/plot.%04d.png -pix_fmt yuv420p out.mp4")
 	CALL system("rm -f *.png")
-	
+	CALL suppr_fichier_data_frame()
 END SUBROUTINE Animation
-
-	
-	
 	
 
 
