@@ -20,24 +20,6 @@ CONTAINS
 ! @Sortie : Flux, Le flux de Godunov Well-Balanced 
 !======================================================================
 
-SUBROUTINE flux_Lax_Friedrichs(W,Flux)
-	REAL(rp), DIMENSION(:,:), INTENT(IN) :: W
-	REAL(rp), DIMENSION(:,:), INTENT(INOUT) :: Flux 
-	REAL(rp), DIMENSION(2) :: v
-	
-	INTEGER :: i 
-	
-	v(1) = c1
-	v(2) = c2
-	Flux(1:2,1:Nx) = 0._rp
-	
-	DO i = 1,Nx-1
-		Flux(:,i) = v(:)/2._rp*(W(:,i+1)+W(:,i)) + dx/(2*dt)*(W(:,i) - W(:,i+1))
-	END DO 
-
-END SUBROUTINE flux_Lax_Friedrichs
-
-
 SUBROUTINE flux_upwind_scal(W,a,Flux)
 	REAL(rp), 		INTENT(IN) :: a
 	REAL(rp), DIMENSION(:), INTENT(IN) :: W
@@ -63,23 +45,25 @@ END SUBROUTINE flux_upwind_scal
 
 SUBROUTINE flux_upwind_burg(W,Flux)
 
-	REAL(rp), DIMENSION(:), INTENT(IN) :: W
-	REAL(rp), DIMENSION(:), INTENT(INOUT) :: Flux
+	REAL(rp), DIMENSION(:,:), INTENT(IN) :: W
+	REAL(rp), DIMENSION(:,:), INTENT(INOUT) :: Flux
 	REAL(rp) :: a
 	REAL(rp) :: ap, am
 	INTEGER :: i
 	
 
-	Flux(1:Nx) = 0._rp
+	Flux(1:2,1:Nx) = 0._rp
 	
 	DO i = 1,Nx-1
-		a = (W(i) + W(i+1))/2._rp
-		am = min(0._rp,a)
-		ap = max(0._rp,a)
-		Flux(i) = W(i)*ap + W(i+1)*am
+		a=.5_rp*(W(1,i)+W(1,i+1))
+		IF(a > 0._rp) THEN
+			Flux(1,i) = .5_rp*W(1,i)**2
+		ELSE
+			Flux(1,i) = .5_rp*W(1,i+1)**2
+		END IF 
+		a = c2
+		Flux(2,i) = min(a,0._rp)*W(2,i+1) + max(a,0._rp)*W(2,i)
 	END DO 
-		
-
 	
 END SUBROUTINE flux_upwind_burg
 !=========================================================================

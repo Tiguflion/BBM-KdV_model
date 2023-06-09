@@ -38,6 +38,7 @@ FOBJS = \
 	flux.o \
 	calcul.o \
 	correction.o \
+	erreur.o \
 	main.o
 
 FMODS = \
@@ -51,7 +52,8 @@ FMODS = \
 	mod_dat.mod  \
 	mod_flux.mod \
 	mod_calcul.mod \
-	mod_correction.mod 
+	mod_correction.mod \
+	mod_erreur.mod \
 # sources Fortran
 FSRCS = \
 	$(SRCDIR)/numerics.f90 \
@@ -65,6 +67,7 @@ FSRCS = \
 	$(SRCDIR)/flux.f90 \
 	$(SRCDIR)/calcul.f90 \
 	$(SRCDIR)/correction.f90 \
+	$(SRCDIR)/erreur.f90 \
 	$(SRCDIR)/main.f90 
 #
 #.o: $(SRCDIR)/%.f90
@@ -93,4 +96,5 @@ ecriture.o: $(SRCDIR)/ecriture.f90 numerics.o cond.o
 flux.o: $(SRCDIR)/flux.f90 cond.o numerics.o vit_et_topo.o
 calcul.o: $(SRCDIR)/calcul.f90 numerics.o cond.o flux.o vit_et_topo.o
 correction.o: $(SRCDIR)/correction.f90 numerics.o
+erreur.o: $(SRCDIR)/erreur.f90 numerics.o operateur.o correction.o
 main.o: $(SRCDIR)/main.f90 flux.o cond.o ecriture.o correction.o gnuplot.o numerics.o 

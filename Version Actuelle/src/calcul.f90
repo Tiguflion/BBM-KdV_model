@@ -27,11 +27,15 @@ SUBROUTINE calcul_pas_de_temps(W,dt)
 
       INTEGER :: i
       REAL(rp)    :: hl, hr
-      REAL(rp)    :: ul, cl, ur, cr
+      REAL(rp)    :: eps = 1.E-10_rp
       REAL(rp)    :: aux
-
-      dt = min(dx/abs(c1),dx/abs(c2))
-      dt = min(dt,Tfin - date)
+	dt = Tfin
+	lambda = c2
+	do i = 1,Nx
+		lambda = max(lambda,abs(W(1,i)))
+	end do 
+	dt = dx/(lambda)
+      dt = min(dt,Tfin - date,tab_sortie(niter)-date)
 	
 END SUBROUTINE calcul_pas_de_temps
 
@@ -57,15 +61,14 @@ REAL(rp) :: ap, am
 
 REAL(rp), DIMENSION(2,nX) :: W_new
 
-W_new(:,:) = W(:,:)
-CALL flux_upwind_burg(W(1,:),Flux(1,:))
-CALL flux_upwind_burg(W(2,:),Flux(2,:))
+!W_new(:,:) = W(:,:)
+CALL flux_upwind_burg(W(:,:),Flux(:,:))
 
 	DO i = 2,Nx-1
 		W(:,i) = W(:,i) - dt/dx*(Flux(:,i) - Flux(:,i-1))
-	END DO 
-	 
 
+	END DO 
+	
 END SUBROUTINE Calcul_Burgers
 
 END MODULE mod_calcul 

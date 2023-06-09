@@ -9,13 +9,13 @@ CONTAINS
 
 
 SUBROUTINE init_animate(dt_sortie)
-	REAL(rp) :: dt_sortie
-	
+	REAL(rp), INTENT(INOUT ):: dt_sortie
+	INTEGER :: nb_sortie = 200
 	CALL system ("rm -f out.mp4")
 	CALL suppr_fichier_data_frame()
 	CALL Init_fichier_data_frame()
 	CALL init_frame_data_names()
-	dt_sortie = Tfin/400._rp
+	dt_sortie = Tfin/nb_sortie
 	
 END SUBROUTINE init_animate
 
@@ -38,8 +38,8 @@ SUBROUTINE script_sauv_png(title)
 		WRITE(111,*) 'set title "',title,date, '"'
 		WRITE(111,*) 'set terminal png'
 		WRITE(111,*) 'set output "frame/',frame_name,'"'
-		WRITE(111,*) 'plot "data/',data_name,'" using 1:2 title "h app"w l, "data/'&
-		&,data_name, '" using 1:3 title "h theo" w l' 
+		WRITE(111,*) 'plot "data/',data_name,'" using 1:2 title "u"w l, "data/'&
+		&,data_name, '" using 1:3 title "w" w l, "data/',data_name, '" u 4:5 title "domaine" w l linetype 4 linewidth 3'
 	CLOSE(111)
 	
 	CALL system("gnuplot hauteur_eau.gnu")
@@ -55,9 +55,10 @@ WRITE(nom_file,'(a,i4.4,a)') "data/data",niter,".dat"
 
 open(unit=21,file=  nom_file,status = 'UNKNOWN')
 
-	do i=1,Nx
-        	write(21,*) X(i),W(1,i),h_temp(i)
-	enddo
+      DO i=1,Nx-1
+           write(21,*) X(i),W(1,i),W(2,i),X(D(1)),0._rp
+      END DO 
+      write(21,*) X(Nx),W(1,Nx),W(2,Nx),X(D(2)),0._rp
 close(21)
 
 END SUBROUTINE Ecrits_data

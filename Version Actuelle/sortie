@@ -1,0 +1,10 @@
+T				:: Pas de temps fixe ? (T-oui, F-non)
+				
+:: ------  Si oui -----
+0.1				:: Pas de temps
+				
+:: ------  Si non -----
+3				:: Nombre de sorties
+1., 2., 3.			:: Temps voulus (séparés par ',')
+				
+F				:: Vidéo ? (T-oui, F-non)

@@ -1,16 +1,18 @@
-0.,   4. 		  :: Xdeb, Xfin
-1000		          :: nx
-1		  	  :: Tfin
-3., 3.			  :: Coefficient de transport pour chaques axes 
+0.,   10. 		  :: Xdeb, Xfin
+10000		          :: nx
+10		  	  :: Tfin
+0., 1.			  :: Coefficient de transport pour chaques axes 
 
-1			  :: 1 - quart de période  sin , 2 - Plat + sin 
+3			  :: 1 - quart de période  sin , 2 - Plat + sin, 3 - Pente
 3		  	  :: (variable inutile pour l'instant) Type de Topographie : 1 = bosse, 2 = pente, 3 = plat 
 0			  :: Hauteur d'eau moyenne
 0.5			  :: Amplitude de la vague 
 0.7			  :: Noeud de la vague initiale  
 
-T				  :: Dispersion ? (T-oui, F-Non)
-0.1			  :: Valeur du paramètre alpha pour la relation de KdV
+T			  :: Dispersion ? (T-oui, F-Non)
+1.d-1			  :: Valeur du paramètre alpha pour la relation de KdV
 
 1.			  :: Condition au bord gauche du domaine
--1.			  :: Condition au bord droit du domaine
+0.			  :: Condition au bord droit du domaine
+
+1.d-5			  :: Valeur de l'erreur de projection moyenne tolérée

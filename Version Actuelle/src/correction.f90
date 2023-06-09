@@ -8,7 +8,7 @@ IMPLICIT NONE
 
 CONTAINS 
 
-SUBROUTINE Correction(W_loc)
+FUNCTION Correction(W_loc)
 
 	IMPLICIT NONE 
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Mat
@@ -18,12 +18,11 @@ SUBROUTINE Correction(W_loc)
 	INTEGER , DIMENSION(:)  , ALLOCATABLE :: Vois
 	REAL(rp), DIMENSION(:,:)	      :: W_loc
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: A_penta
-	REAL(rp), DIMENSION(:)  , ALLOCATABLE :: A_Creux
 	REAL(rp), DIMENSION(:)  , ALLOCATABLE :: U ! Vitesse horizontale 
 	REAL(rp), DIMENSION(:)  , ALLOCATABLE :: B ! Second membre
 	REAL(rp), DIMENSION(:)  , ALLOCATABLE :: A_diag !- Coefficients diagonale de la matrice A
 
-	INTEGER, DIMENSION(:)	, ALLOCATABLE :: vois_debug
+	REAL(rp), DIMENSION(:,:)  , ALLOCATABLE :: Correction
 
 
 	INTEGER i,j,k,l
@@ -32,6 +31,7 @@ SUBROUTINE Correction(W_loc)
 
 	CALL Init_Vec_Cor(Ne,B,U)
 	 
+	ALLOCATE(Correction(2,Ne))
 	ALLOCATE(A_penta(5,Ne))
 	A_Penta(:,:) = 0._rp
 	
@@ -39,10 +39,11 @@ SUBROUTINE Correction(W_loc)
 	
 
 	CALL rempli_A_penta(Ne,A_penta)
-	
-	CALL Conditions_Bord_L(Ne,W_loc,0._rp,0._rp,lB,B,A_penta) !-- Utiliser des variables globales, obtenue à
+	W(1,1) = lB
+	W(1,Nx) = rB
+	CALL Conditions_Bord_L(Ne,W_loc,0._rp,0._rp,W(1,max(D(1)-1,1)),B,A_penta) !-- Utiliser des variables globales, obtenue à
 	! partir d'un fichier texte pour obtenir a, b, c, tq u0 = au1 + bu2 + c
-	CALL Conditions_Bord_R(Ne,W_loc,0._rp,0._rp,rB,B,A_penta)
+	CALL Conditions_Bord_R(Ne,W_loc,0._rp,0._rp,W(1,min(D(2)+1,Nx)),B,A_penta)
 	
 	!Faire une disjonction de cas, en fonction du bord, afin de permettre d'avoir deux conditions sur deux bords différents.
 
@@ -50,9 +51,10 @@ SUBROUTINE Correction(W_loc)
 	CALL res_Chol_Penta(Ne, A_penta, U, B)
 
  
-	W_loc(1,1:Ne) = U(1:Ne)
+	Correction(1,1:Ne) = U(1:Ne)
+	Correction(2,1:Ne) = W_loc(2,1:Ne)
 	
-END SUBROUTINE Correction
+END FUNCTION Correction
 
 SUBROUTINE Init_Vec_Cor(Ne,B,U)
 
@@ -80,8 +82,8 @@ IMPLICIT NONE
 	REAL(rp), DIMENSION(5,Ne), INTENT(INOUT) :: A_penta
 
 	REAL(rp), DIMENSION(Ne) :: Vec,Vec2
-	Vec2(:) = -(alpha**2)
-	Vec(:) = 1._rp
+	Vec2(1:Ne) = -(alpha**2)
+	Vec(1:Ne) = 1._rp
 
 	A_penta(:,:) = aD2X_Penta(vec2(:), dx, Ne) + Diag_Penta(vec(:),Ne,0) 
 	
@@ -100,7 +102,7 @@ IMPLICIT NONE
 	
 	B = 0._rp
 	B = W_loc(1,1:Ne) + alpha*Da(W_loc(2,1:Ne),dx,Ne) 
-	B(1) = B(1) + alpha*W_loc(2,2)/(2*dx)  !bug ? 
+	B(1) = B(1) + alpha*W_loc(2,2)/(2*dx) 
 	B(Ne) = B(Ne) - alpha*W_loc(2,Ne-1)/(2*dx)
 
 
